@@ -1,7 +1,5 @@
-import numba.typed.typedlist
 import numpy as np
 from numba import njit
-import torch
 
 
 @njit
@@ -12,19 +10,22 @@ def rand_choice_nb(arr, prob):
 @njit
 def calculate_target_values(board_evaluations, game_result):
     n = len(board_evaluations)
+    # return game_result * np.ones(n)
+
     weighted_y = np.zeros(n)
     weighted_y[:-1] = board_evaluations[1:]
     weighted_y[-1] = game_result
-    return weighted_y
-    weighted_y *= np.flip(np.arange(n) + 1)
-    # weighted_y *= np.arange(n) + 1
+    # return weighted_y
+
+    # weighted_y *= np.flip(np.arange(n) + 1)
+    weighted_y *= np.arange(n) + 1
     average_sequence = np.zeros(n)
     weight_sum = 0
     sequence_sum = 0
     for i in range(n):
         # weight_sum += 1
-        weight_sum += i + 1
-        # weight_sum += n - i + 1
+        # weight_sum += i + 1
+        weight_sum += n - i + 1
         sequence_sum += weighted_y[-i - 1]
         average_sequence[-i - 1] = sequence_sum / weight_sum
     return average_sequence
@@ -32,7 +33,7 @@ def calculate_target_values(board_evaluations, game_result):
 
 @njit
 def check_game_over(board):
-    board2d = board.reshape(3, 3)
+    board2d = board.reshape(int(np.sqrt(board.size)), -1)
     row_sum = np.sum(board2d, axis=0)
     col_sum = np.sum(board2d, axis=1)
     diagonal_sum = board2d[0, 0] + board2d[1, 1] + board2d[2, 2]
@@ -106,6 +107,9 @@ def play(w, b, n_games, n=3):
 
 
 if __name__ == '__main__':
+    import torch
+    import numba.typed.typedlist
+
     from ai_client import AIClient
     model = AIClient([10, 10, 10]).model
     x = torch.zeros(9)

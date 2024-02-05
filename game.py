@@ -34,25 +34,53 @@ class Game:
             repr_str += '|\n'
         return repr_str
 
+    def _check_win_on_segment(self, segment):
+        segment_length = len(segment)
+        segment_sum = np.sum(segment[:self.m])
+        if np.abs(segment_sum) == self.m:
+            return int(np.sign(segment_sum))
+        for shift in range(segment_length - self.m):
+            segment_sum += segment[shift + self.m] - segment[shift]
+            if np.abs(segment_sum) == self.m:
+                return int(np.sign(segment_sum))
+        return None
+
     def _check_win(self):
-        # TODO: works only for n-long line winning conditions
-        row_max_sum = np.max(abs(np.sum(self.board, axis=0)))
-        if self.n == row_max_sum:
-            return True
+        # check rows
+        for row_index in range(self.n):
+            winner = self._check_win_on_segment(self.board[row_index, :])
+            if winner is not None:
+                return winner
 
-        col_max_sum = np.max(abs(np.sum(self.board, axis=1)))
-        if self.n == col_max_sum:
-            return True
+        # check columns
+        for col_index in range(self.n):
+            winner = self._check_win_on_segment(self.board[:, col_index])
+            if winner is not None:
+                return winner
 
-        main_diag_sum = abs(np.trace(self.board))
-        if self.n == main_diag_sum:
-            return True
+        # check canonical diagonals
+        max_diag_index = self.n - self.m
+        for diag_index in range(-max_diag_index, max_diag_index + 1):
+            winner = self._check_win_on_segment(np.diag(self.board, diag_index))
+            if winner is not None:
+                return winner
 
-        anti_diag_sum = abs(np.trace(np.fliplr(self.board)))
-        if self.n == anti_diag_sum:
-            return True
+        # check anti-canonical diagonals
+        flipped_board = np.fliplr(self.board)
+        for diag_index in range(-max_diag_index, max_diag_index + 1):
+            winner = self._check_win_on_segment(np.diag(flipped_board, diag_index))
+            if winner is not None:
+                return winner
+
+        # if there are no more moves available, it's a draw
+        is_full = (np.count_nonzero(self.board_array) == len(self.board_array))
+        if is_full:
+            return 0
 
         return None
+
+    def possible_moves(self):
+        return np.where(self.board_array == 0)[0]
 
     def move(self, index):
         if self.status == 0:
@@ -61,14 +89,9 @@ class Game:
             raise ValueError('This place is not empty')
         self.board_array[index] = self.status
 
-        if self._check_win():
-            self.winner = self.status
-            self.status = 0
-            return
-
-        # check draw
-        if np.count_nonzero(self.board_array) == len(self.board_array):
-            self.winner = 0
+        winner = self._check_win()
+        if winner is not None:
+            self.winner = winner
             self.status = 0
             return
 

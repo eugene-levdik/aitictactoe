@@ -6,5 +6,5 @@ class RandomClient:
         pass
 
     def ask_move(self, game):
-        empty_slots_indices = np.where(game.board_array == 0)[0]
-        return np.random.choice(empty_slots_indices)
+        possible_moves = game.possible_moves()
+        return np.random.choice(possible_moves)
